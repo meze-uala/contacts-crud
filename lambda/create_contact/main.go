@@ -20,4 +20,5 @@ func main() {
 	contactHandler := handler.NewContactHandler(&contactService)
 
 	lambda.Start(contactHandler.AddContact)
+
 }

@@ -29,8 +29,9 @@ func (cs *ContactService) AddContact(contact models.Contact) (*models.Contact, e
 
 }
 func (cs *ContactService) GetContact(id string) (*models.Contact, error) {
-	return nil, nil
+	return cs.contactRepository.GetContact(id)
 }
+
 func (cs *ContactService) GetAllContacts() ([]*models.Contact, error) {
 	return nil, nil
 }

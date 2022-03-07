@@ -2,6 +2,7 @@ package repository
 
 import (
 	"contacts-crud/cmd/contacts/models"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -48,7 +49,31 @@ func (cr *ContactRepository) AddContact(contact models.Contact) (*models.Contact
 
 }
 func (cr *ContactRepository) GetContact(id string) (*models.Contact, error) {
-	return nil, nil
+
+	var contact models.Contact
+	//TODO ver si el cliente no deberia ser reubicado
+	dynamoDbClient := dynamodb.New(cr.dynamoDBSession)
+
+	log.Println("Ready to get the contact from dynamoDB")
+
+	result, err := dynamoDbClient.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(TABLE_NAME),
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String(id),
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("Got error calling GetItem: %s", err)
+	}
+
+	err = dynamodbattribute.UnmarshalMap(result.Item, &contact)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to unmarshal Record, %v", err))
+	}
+
+	return &contact, nil
 }
 func (cr *ContactRepository) GetAllContacts() ([]*models.Contact, error) {
 	return nil, nil
