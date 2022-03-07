@@ -1,105 +1,23 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"github.com/aws/aws-lambda-go/events"
+	"contacts-crud/cmd/contacts/handler"
+	"contacts-crud/cmd/contacts/repository"
+	"contacts-crud/cmd/contacts/service"
+	"contacts-crud/internal"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/google/uuid"
-	"log"
-	"net/http"
 )
 
-type Contact struct {
-	ID        string `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Status    string `json:"status"`
-}
-
 func main() {
-	lambda.Start(HandleAddContactRequest)
-}
 
-func HandleAddContactRequest(ctx context.Context, evt events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	internal.InitDynamoDB()
 
-	var requestBody Contact
+	//Create repo
+	contactRepo := repository.NewContactRepository(internal.DynamoDBSession)
+	//Create service
+	contactService := service.NewContactService(&contactRepo)
+	//Create Handler
+	contactHandler := handler.NewContactHandler(&contactService)
 
-	resp := events.APIGatewayProxyResponse{
-		Headers: map[string]string{
-			"Content-Type":                 "application/json",
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Methods": "GET,HEAD,OPTIONS,POST",
-		},
-	}
-
-	err := json.Unmarshal([]byte(evt.Body), &requestBody)
-
-	if err != nil {
-		resp.StatusCode = http.StatusBadRequest
-		return resp, err
-	}
-
-	// Initialize a session that the SDK will use to load
-	// credentials from the shared credentials file ~/.aws/credentials
-	// and region from the shared configuration file ~/.aws/config.
-	//sess := session.Must(session.NewSessionWithOptions(session.Options{
-	//	SharedConfigState: session.SharedConfigEnable,
-	//}))
-	//TODO ademas de refactorizar en capas como servicios y repo, una vez que esto funcione, quitar los hardcore :P
-	//sess, err := session.NewSession(&aws.Config{
-	//	Region: aws.String("us-east-1"),
-	//	Credentials: credentials.NewStaticCredentials("ASIASLBG62CDURE3S4NG",
-	//		"tNHnx4P6Cbln+aCZhDtjW0m6yJRgdQROPpezZXjH",
-	//		""),
-	//})
-
-	sess := session.Must(session.NewSessionWithOptions(
-		session.Options{
-			SharedConfigState: session.SharedConfigEnable,
-		}))
-
-	// Create DynamoDB client
-	dynamoDbClient := dynamodb.New(sess)
-
-	//Fin dynamoDB
-	uniqueID, _ := uuid.NewUUID()
-
-	requestBody.ID = uniqueID.String()
-	requestBody.Status = "CREATED"
-
-	contactItem, err := dynamodbattribute.MarshalMap(requestBody)
-	if err != nil {
-		log.Fatalf("Got error marshalling new contact item: %s", err)
-	}
-
-	//Persistencia
-
-	tableName := "meze-contacts"
-
-	input := &dynamodb.PutItemInput{
-		Item:      contactItem,
-		TableName: aws.String(tableName),
-	}
-
-	println("Voy a hacer el put en la tabla de dynamoDb")
-	_, err = dynamoDbClient.PutItem(input)
-	if err != nil {
-		log.Fatalf("Got error calling PutItem: %s", err)
-		resp.Body = err.Error()
-		resp.StatusCode = http.StatusInternalServerError
-		return resp, err
-	}
-
-	fmt.Println("¡¡¡Successfully added contact!!!")
-
-	resp.Body = evt.Body
-	resp.StatusCode = http.StatusCreated
-	return resp, nil
-
+	lambda.Start(contactHandler.AddContact)
 }
