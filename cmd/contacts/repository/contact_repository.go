@@ -22,11 +22,8 @@ func NewContactRepository(dynamoDB *internal.DynamoDB) ContactRepository {
 
 func (cr *ContactRepository) AddContact(contact models.Contact) (*models.Contact, error) {
 
-	contactItem, err := dynamodbattribute.MarshalMap(contact)
-	if err != nil {
-		log.Fatalf("Got error marshalling new contact item: %s", err)
-		return nil, err
-	}
+	//Esto no puede dar un error, ya que lo valido antes en el handler.
+	contactItem, _ := dynamodbattribute.MarshalMap(contact)
 
 	input := &dynamodb.PutItemInput{
 		Item:      contactItem,
@@ -35,7 +32,7 @@ func (cr *ContactRepository) AddContact(contact models.Contact) (*models.Contact
 
 	log.Println("Ready to insert the new contact into dynamoDB")
 
-	_, err = cr.dynamoDB.Db.PutItem(input)
+	_, err := cr.dynamoDB.Db.PutItem(input)
 
 	if err != nil {
 		log.Println("Got error calling PutItem: ", err)
