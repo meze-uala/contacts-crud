@@ -1,5 +1,7 @@
 package handler
 
+//go:generate mockgen -source contact.go -destination mock_contact_handler.go -package handler
+
 import (
 	"contacts-crud/cmd/contacts/models"
 	"context"

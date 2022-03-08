@@ -2,28 +2,25 @@ package repository
 
 import (
 	"contacts-crud/cmd/contacts/models"
+	"contacts-crud/internal"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"log"
 )
 
-const TABLE_NAME = "meze-contacts"
+const TableName = "meze-contacts"
 
 type ContactRepository struct {
-	dynamoDBSession *session.Session
+	dynamoDB *internal.DynamoDB
 }
 
-func NewContactRepository(dynamoDBSession *session.Session) ContactRepository {
-	return ContactRepository{dynamoDBSession: dynamoDBSession}
+func NewContactRepository(dynamoDB *internal.DynamoDB) ContactRepository {
+	return ContactRepository{dynamoDB: dynamoDB}
 }
 
 func (cr *ContactRepository) AddContact(contact models.Contact) (*models.Contact, error) {
-
-	//TODO ver si el cliente no deberia ser reubicado
-	dynamoDbClient := dynamodb.New(cr.dynamoDBSession)
 
 	contactItem, err := dynamodbattribute.MarshalMap(contact)
 	if err != nil {
@@ -33,12 +30,12 @@ func (cr *ContactRepository) AddContact(contact models.Contact) (*models.Contact
 
 	input := &dynamodb.PutItemInput{
 		Item:      contactItem,
-		TableName: aws.String(TABLE_NAME),
+		TableName: aws.String(TableName),
 	}
 
 	log.Println("Ready to insert the new contact into dynamoDB")
 
-	_, err = dynamoDbClient.PutItem(input)
+	_, err = cr.dynamoDB.Db.PutItem(input)
 
 	if err != nil {
 		log.Println("Got error calling PutItem: ", err)
@@ -51,13 +48,11 @@ func (cr *ContactRepository) AddContact(contact models.Contact) (*models.Contact
 func (cr *ContactRepository) GetContact(id string) (*models.Contact, error) {
 
 	var contact models.Contact
-	//TODO ver si el cliente no deberia ser reubicado
-	dynamoDbClient := dynamodb.New(cr.dynamoDBSession)
 
 	log.Println("Ready to get the contact from dynamoDB")
 
-	result, err := dynamoDbClient.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(TABLE_NAME),
+	result, err := cr.dynamoDB.Db.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(TableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {
 				S: aws.String(id),
@@ -75,6 +70,7 @@ func (cr *ContactRepository) GetContact(id string) (*models.Contact, error) {
 
 	return &contact, nil
 }
+
 func (cr *ContactRepository) GetAllContacts() ([]*models.Contact, error) {
 	return nil, nil
 }

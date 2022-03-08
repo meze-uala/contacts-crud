@@ -10,10 +10,10 @@ import (
 
 func main() {
 
-	internal.InitDynamoDB()
+	internal.ConfigureDynamoDB()
 
 	//Create repo
-	contactRepo := repository.NewContactRepository(internal.DynamoDBSession)
+	contactRepo := repository.NewContactRepository(internal.Dyna)
 	//Create service
 	contactService := service.NewContactService(&contactRepo)
 	//Create Handler

@@ -1,5 +1,7 @@
 package service
 
+//go:generate mockgen -source contact_service.go -destination mock_contact_service.go -package service
+
 import (
 	"contacts-crud/cmd/contacts/models"
 	"github.com/google/uuid"
