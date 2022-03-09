@@ -30,6 +30,7 @@ func (cs *ContactService) AddContact(contact models.Contact) (*models.Contact, e
 	return cs.contactRepository.AddContact(contact)
 
 }
+
 func (cs *ContactService) GetContact(id string) (*models.Contact, error) {
 	return cs.contactRepository.GetContact(id)
 }
