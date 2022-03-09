@@ -6,10 +6,12 @@ import (
 	"contacts-crud/cmd/contacts/models"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 type IContactService interface {
@@ -71,7 +73,6 @@ func (ch *ContactHandler) AddContact(ctx context.Context, evt events.APIGatewayP
 
 func (ch *ContactHandler) GetContact(ctx context.Context, evt events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	//TODO solo por motivos de desarrollo inicial, enviaremos el id en el body, pero hay que utilizar los params por lo visto
 	var requestBody models.Contact
 
 	resp := events.APIGatewayProxyResponse{
@@ -82,14 +83,20 @@ func (ch *ContactHandler) GetContact(ctx context.Context, evt events.APIGatewayP
 		},
 	}
 
-	err := json.Unmarshal([]byte(evt.Body), &requestBody)
+	rawIDParam, found := evt.PathParameters["id"]
 
-	if err != nil {
-		resp.StatusCode = http.StatusBadRequest
-		return resp, err
+	if !found {
+		log.Println("Missing contact id on URL")
+		return resp, errors.New("missing the ID in the url")
 	}
 
-	fmt.Println("I will search the contact with id: ", requestBody.ID)
+	value, err := url.QueryUnescape(rawIDParam)
+	if nil != err {
+		log.Println("Error al intentar parsear el id de la url: ", err.Error())
+		return resp, err
+	}
+	requestBody.ID = value
+
 	retrievedContact, err := ch.contactService.GetContact(requestBody.ID)
 
 	if err != nil {
