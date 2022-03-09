@@ -2,19 +2,25 @@ package internal
 
 import (
 	"github.com/aws/aws-sdk-go/aws/session"
-	"log"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
-var DynamoDBSession *session.Session
+type DynamoDB struct {
+	Db dynamodbiface.DynamoDBAPI
+}
 
-func InitDynamoDB() {
+// Dyna - object from DynamoDB
+var Dyna *DynamoDB
 
-	log.Println("DynamoDB init >>>")
+// ConfigureDynamoDB - init func for open connection to aws dynamodb
 
-	sess := session.Must(session.NewSessionWithOptions(
+func ConfigureDynamoDB() {
+	Dyna = new(DynamoDB)
+	awsSession := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			SharedConfigState: session.SharedConfigEnable,
 		}))
-
-	DynamoDBSession = sess
+	svc := dynamodb.New(awsSession)
+	Dyna.Db = dynamodbiface.DynamoDBAPI(svc)
 }

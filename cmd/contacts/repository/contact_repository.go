@@ -2,42 +2,37 @@ package repository
 
 import (
 	"contacts-crud/cmd/contacts/models"
+	"contacts-crud/internal"
+	"errors"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"log"
 )
 
-const TABLE_NAME = "meze-contacts"
+const TableName = "meze-contacts"
 
 type ContactRepository struct {
-	dynamoDBSession *session.Session
+	dynamoDB *internal.DynamoDB
 }
 
-func NewContactRepository(dynamoDBSession *session.Session) ContactRepository {
-	return ContactRepository{dynamoDBSession: dynamoDBSession}
+func NewContactRepository(dynamoDB *internal.DynamoDB) ContactRepository {
+	return ContactRepository{dynamoDB: dynamoDB}
 }
 
 func (cr *ContactRepository) AddContact(contact models.Contact) (*models.Contact, error) {
 
-	//TODO ver si el cliente no deberia ser reubicado
-	dynamoDbClient := dynamodb.New(cr.dynamoDBSession)
-
-	contactItem, err := dynamodbattribute.MarshalMap(contact)
-	if err != nil {
-		log.Fatalf("Got error marshalling new contact item: %s", err)
-		return nil, err
-	}
+	//Esto no puede dar un error, ya que lo valido antes en el handler.
+	contactItem, _ := dynamodbattribute.MarshalMap(contact)
 
 	input := &dynamodb.PutItemInput{
 		Item:      contactItem,
-		TableName: aws.String(TABLE_NAME),
+		TableName: aws.String(TableName),
 	}
 
 	log.Println("Ready to insert the new contact into dynamoDB")
 
-	_, err = dynamoDbClient.PutItem(input)
+	_, err := cr.dynamoDB.Db.PutItem(input)
 
 	if err != nil {
 		log.Println("Got error calling PutItem: ", err)
@@ -48,8 +43,37 @@ func (cr *ContactRepository) AddContact(contact models.Contact) (*models.Contact
 
 }
 func (cr *ContactRepository) GetContact(id string) (*models.Contact, error) {
-	return nil, nil
+
+	var contact models.Contact
+
+	log.Println("Ready to get the contact from dynamoDB")
+
+	result, err := cr.dynamoDB.Db.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(TableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String(id),
+			},
+		},
+	})
+	if err != nil {
+		log.Println("Got error calling GetItem: ", err)
+		return nil, err
+	}
+
+	if result.Item == nil {
+		return nil, errors.New("contact not found")
+	}
+
+	err = dynamodbattribute.UnmarshalMap(result.Item, &contact)
+	if err != nil {
+		log.Println("Failed to unmarshal Record: ", err)
+		return nil, err
+	}
+
+	return &contact, nil
 }
+
 func (cr *ContactRepository) GetAllContacts() ([]*models.Contact, error) {
 	return nil, nil
 }

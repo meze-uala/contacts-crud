@@ -1,5 +1,7 @@
 package service
 
+//go:generate mockgen -source contact_service.go -destination mock_contact_service.go -package service
+
 import (
 	"contacts-crud/cmd/contacts/models"
 	"github.com/google/uuid"
@@ -28,9 +30,17 @@ func (cs *ContactService) AddContact(contact models.Contact) (*models.Contact, e
 	return cs.contactRepository.AddContact(contact)
 
 }
+
 func (cs *ContactService) GetContact(id string) (*models.Contact, error) {
-	return nil, nil
+	result, err := cs.contactRepository.GetContact(id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
+
 func (cs *ContactService) GetAllContacts() ([]*models.Contact, error) {
 	return nil, nil
 }
