@@ -3,7 +3,6 @@ package repository
 import (
 	"contacts-crud/cmd/contacts/models"
 	"contacts-crud/internal"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
@@ -57,12 +56,14 @@ func (cr *ContactRepository) GetContact(id string) (*models.Contact, error) {
 		},
 	})
 	if err != nil {
-		log.Fatalf("Got error calling GetItem: %s", err)
+		log.Println("Got error calling GetItem: ", err)
+		return nil, err
 	}
 
 	err = dynamodbattribute.UnmarshalMap(result.Item, &contact)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to unmarshal Record, %v", err))
+		log.Println("Failed to unmarshal Record: ", err)
+		return nil, err
 	}
 
 	return &contact, nil
