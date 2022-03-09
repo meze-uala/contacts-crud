@@ -57,13 +57,7 @@ func (ch *ContactHandler) AddContact(ctx context.Context, evt events.APIGatewayP
 
 	log.Println("Contact created successfully with id: ", createdContact.ID)
 
-	createdContactJson, err := json.Marshal(&createdContact)
-
-	if err != nil {
-		resp.Body = err.Error()
-		resp.StatusCode = http.StatusInternalServerError
-		return resp, err
-	}
+	createdContactJson, _ := json.Marshal(&createdContact)
 
 	resp.Body = string(createdContactJson)
 	resp.StatusCode = http.StatusCreated
@@ -87,9 +81,10 @@ func (ch *ContactHandler) GetContact(ctx context.Context, evt events.APIGatewayP
 
 	if !found {
 		log.Println("Missing contact id on URL")
+		resp.StatusCode = http.StatusBadRequest
 		return resp, errors.New("missing the ID in the url")
 	}
-
+	//TODO hay manera de romper esto?
 	value, err := url.QueryUnescape(rawIDParam)
 	if nil != err {
 		log.Println("Error al intentar parsear el id de la url: ", err.Error())
@@ -99,18 +94,18 @@ func (ch *ContactHandler) GetContact(ctx context.Context, evt events.APIGatewayP
 
 	retrievedContact, err := ch.contactService.GetContact(requestBody.ID)
 
+	if retrievedContact == nil && err.Error() == "contact not found" {
+		fmt.Println("Contact with id " + requestBody.ID + "not found!")
+		resp.Body = "Contact not found"
+		resp.StatusCode = http.StatusNotFound
+		return resp, err
+	}
+
 	if err != nil {
 		fmt.Println("An error ocurred trying to get the contact. Error: ", err.Error())
 		resp.Body = err.Error()
 		resp.StatusCode = http.StatusInternalServerError
 		return resp, err
-	}
-
-	if retrievedContact == nil {
-		fmt.Println("Contact with id " + requestBody.ID + "not found!")
-		resp.Body = "Contact not found"
-		resp.StatusCode = http.StatusNotFound
-		return resp, nil
 	}
 
 	retrievedContactJson, err := json.Marshal(&retrievedContact)

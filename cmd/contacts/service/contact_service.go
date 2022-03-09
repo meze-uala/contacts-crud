@@ -32,7 +32,13 @@ func (cs *ContactService) AddContact(contact models.Contact) (*models.Contact, e
 }
 
 func (cs *ContactService) GetContact(id string) (*models.Contact, error) {
-	return cs.contactRepository.GetContact(id)
+	result, err := cs.contactRepository.GetContact(id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (cs *ContactService) GetAllContacts() ([]*models.Contact, error) {

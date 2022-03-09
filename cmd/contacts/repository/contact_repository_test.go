@@ -159,6 +159,34 @@ func TestContactRepository_GetContact_Error_Getting_Result(t *testing.T) {
 	assert.Nil(t, addResult)
 }
 
+func TestContactRepository_GetContact_No_Results(t *testing.T) {
+	contact := map[string]interface{}{
+		"id": "valid-id",
+	}
+
+	Dyna := new(internal.DynamoDB)
+	Dyna.Db, mock = dynamock.New()
+
+	contactRepository := NewContactRepository(Dyna)
+
+	contactItem, err := dynamodbattribute.MarshalMap(contact)
+
+	if err != nil {
+		log.Fatalf("Got error marshalling contact item: %s", err)
+	}
+
+	result := dynamodb.GetItemOutput{
+		ConsumedCapacity: nil,
+		Item:             nil,
+	}
+
+	mock.ExpectGetItem().ToTable("meze-contacts").WithKeys(contactItem).WillReturns(result)
+	addResult, err := contactRepository.GetContact("valid-id")
+
+	assert.Error(t, err)
+	assert.Nil(t, addResult)
+}
+
 func TestContactRepository_GetContact_Error_On_Unmarshall(t *testing.T) {
 	contact := map[string]interface{}{
 		"id": "valid-id",
