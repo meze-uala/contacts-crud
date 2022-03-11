@@ -17,6 +17,7 @@ import (
 type IContactService interface {
 	AddContact(contact models.Contact) (*models.Contact, error)
 	GetContact(id string) (*models.Contact, error)
+	UpdateContactStatus(id string) (*models.Contact, error)
 	GetAllContacts() ([]*models.Contact, error)
 }
 
@@ -115,6 +116,30 @@ func (ch *ContactHandler) GetContact(ctx context.Context, evt events.APIGatewayP
 	resp.Body = string(retrievedContactJson)
 	resp.StatusCode = http.StatusOK
 	return resp, nil
+}
+
+func (ch *ContactHandler) UpdateContact(ctx context.Context, snsEvent events.SNSEvent) (*string, error) {
+
+	for _, record := range snsEvent.Records {
+		snsRecord := record.SNS
+
+		fmt.Printf("[%s %s] Message = %s \n", record.EventSource, snsRecord.Timestamp, snsRecord.Message)
+
+		id := snsRecord.Message
+
+		result, err := ch.contactService.UpdateContactStatus(id)
+
+		if err != nil {
+			log.Println("Error trying to update contact. Error: ", err.Error())
+			return nil, err
+		}
+
+		successMessage := "Update ok for id: " + result.ID
+		log.Println("Update ok for id: ", result.ID)
+		return &successMessage, nil
+	}
+	log.Println("No records provided!")
+	return nil, errors.New("no records provided")
 }
 
 //func GetAllContacts(ctx context.Context, evt events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {

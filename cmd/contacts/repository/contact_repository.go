@@ -74,6 +74,41 @@ func (cr *ContactRepository) GetContact(id string) (*models.Contact, error) {
 	return &contact, nil
 }
 
+func (cr *ContactRepository) UpdateContactStatus(id string) (*models.Contact, error) {
+
+	var contact models.Contact
+
+	log.Println("Ready to update the contact from dynamoDB")
+	statusUpdate := "PROCESSED"
+	input := &dynamodb.UpdateItemInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":r": {
+				S: aws.String(statusUpdate),
+			},
+		},
+		TableName: aws.String(TableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String(id),
+			},
+		},
+		ReturnValues:     aws.String("UPDATED_NEW"),
+		UpdateExpression: aws.String("set first_name = :r"),
+	}
+
+	result, err := cr.dynamoDB.Db.UpdateItem(input)
+
+	if err != nil {
+		log.Println("Error on UpdateItem: ", err.Error())
+	}
+
+	log.Println("Successfully updated " + id + " status to PROCESSED. Result: " + result.String())
+	contact.ID = id
+	contact.Status = "PROCESSED"
+
+	return &contact, nil
+}
+
 func (cr *ContactRepository) GetAllContacts() ([]*models.Contact, error) {
 	return nil, nil
 }

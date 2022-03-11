@@ -25,20 +25,23 @@ func NewPushContactToSNSHandler(service IPushContactToSNS) PushContactToSNSHandl
 
 func (pch *PushContactToSNSHandler) PushCreatedContactToSNS(ctx context.Context, e events.DynamoDBEvent) (*sns.PublishOutput, error) {
 	for _, record := range e.Records {
-		fmt.Printf("Processing request data for event ID %s, type %s.\n", record.EventID, record.EventName)
+		if record.EventName == "INSERT" {
+			fmt.Printf("Processing request data for event ID %s, type %s.\n", record.EventID, record.EventName)
 
-		id := record.Change.NewImage["id"].String()
+			id := record.Change.NewImage["id"].String()
 
-		result, err := pch.pushToSNSService.PublishContactIDToSNS(id)
+			result, err := pch.pushToSNSService.PublishContactIDToSNS(id)
 
-		if err != nil {
-			log.Println("An error occurred when trying to publish to SNS. Error: ", err.Error())
-			return nil, err
+			if err != nil {
+				log.Println("An error occurred when trying to publish to SNS. Error: ", err.Error())
+				return nil, err
+			}
+
+			log.Println("Result from sns publish: ", result.String())
+			return result, nil
 		}
-
-		log.Println("Result from sns publish: ", result.String())
-		return result, nil
+		log.Println("record is not an insert")
 	}
 
-	return nil, errors.New("no records for proccesing found")
+	return nil, errors.New("no valid records for proccesing found")
 }

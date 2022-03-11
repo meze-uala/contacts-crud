@@ -20,7 +20,7 @@ func NewPushContactToSNSService(snsClient snsiface.SNSAPI) PushContactToSNSServi
 
 func (pcs *PushContactToSNSService) PublishContactIDToSNS(id string) (*sns.PublishOutput, error) {
 
-	messageToPush := "Successful user created with id: '" + id + "'. Thanks"
+	messageToPush := id
 
 	result, err := pcs.SNSClient.Publish(&sns.PublishInput{
 		Message:  &messageToPush,
