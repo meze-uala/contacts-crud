@@ -78,3 +78,18 @@ func (mr *MockIContactServiceMockRecorder) GetContact(id interface{}) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContact", reflect.TypeOf((*MockIContactService)(nil).GetContact), id)
 }
+
+// UpdateContactStatus mocks base method.
+func (m *MockIContactService) UpdateContactStatus(id string) (*models.Contact, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateContactStatus", id)
+	ret0, _ := ret[0].(*models.Contact)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateContactStatus indicates an expected call of UpdateContactStatus.
+func (mr *MockIContactServiceMockRecorder) UpdateContactStatus(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContactStatus", reflect.TypeOf((*MockIContactService)(nil).UpdateContactStatus), id)
+}

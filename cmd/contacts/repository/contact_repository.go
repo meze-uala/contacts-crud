@@ -101,6 +101,7 @@ func (cr *ContactRepository) UpdateContactStatus(id string) (*models.Contact, er
 
 	if err != nil {
 		log.Println("Error on UpdateItem: ", err.Error())
+		return nil, err
 	}
 
 	log.Println("Successfully updated " + id + " status to PROCESSED. Result: " + result.String())

@@ -18,6 +18,7 @@ func NewPushContactToSNSService(snsClient snsiface.SNSAPI) PushContactToSNSServi
 	return PushContactToSNSService{SNSClient: snsClient}
 }
 
+//TODO Add tests for this function!!
 func (pcs *PushContactToSNSService) PublishContactIDToSNS(id string) (*sns.PublishOutput, error) {
 
 	messageToPush := id

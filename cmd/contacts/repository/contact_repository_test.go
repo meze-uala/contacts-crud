@@ -3,6 +3,7 @@ package repository
 import (
 	"contacts-crud/cmd/contacts/models"
 	"contacts-crud/internal"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	dynamock "github.com/gusaul/go-dynamock"
@@ -219,6 +220,63 @@ func TestContactRepository_GetContact_Error_On_Unmarshall(t *testing.T) {
 
 	mock.ExpectGetItem().ToTable("meze-contacts").WithKeys(contactItem).WillReturns(result)
 	addResult, err := contactRepository.GetContact("valid-id")
+
+	assert.Error(t, err)
+	assert.Nil(t, addResult)
+}
+
+func TestContactRepository_GetAllContacts(t *testing.T) {
+	Dyna := new(internal.DynamoDB)
+	Dyna.Db, mock = dynamock.New()
+
+	contactRepository := NewContactRepository(Dyna)
+
+	_, err := contactRepository.GetAllContacts()
+
+	assert.NoError(t, err)
+}
+
+func TestContactRepository_UpdateContactStatus(t *testing.T) {
+	contact := GetValidContact()
+
+	Dyna := new(internal.DynamoDB)
+	Dyna.Db, mock = dynamock.New()
+
+	contactRepository := NewContactRepository(Dyna)
+
+	result := dynamodb.UpdateItemOutput{
+		Attributes:            nil,
+		ConsumedCapacity:      nil,
+		ItemCollectionMetrics: nil,
+	}
+
+	mock.ExpectUpdateItem().ToTable(TableName).WithKeys(map[string]*dynamodb.AttributeValue{"id": {
+		S: aws.String("valid-id"),
+	}}).WillReturns(result)
+	addResult, err := contactRepository.UpdateContactStatus(contact.ID)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, addResult)
+}
+
+func TestContactRepository_UpdateContactStatus_Error(t *testing.T) {
+	contact := GetValidContact()
+
+	Dyna := new(internal.DynamoDB)
+	Dyna.Db, mock = dynamock.New()
+
+	contactRepository := NewContactRepository(Dyna)
+
+	result := dynamodb.UpdateItemOutput{
+		Attributes:            nil,
+		ConsumedCapacity:      nil,
+		ItemCollectionMetrics: nil,
+	}
+
+	mock.ExpectUpdateItem().ToTable(TableName).WithKeys(map[string]*dynamodb.AttributeValue{"id": {
+		S: aws.String("invalid-id-just-for-error-way"),
+	}}).WillReturns(result)
+	addResult, err := contactRepository.UpdateContactStatus(contact.ID)
 
 	assert.Error(t, err)
 	assert.Nil(t, addResult)
