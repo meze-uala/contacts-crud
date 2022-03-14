@@ -61,7 +61,7 @@ func TestPushContactToSNSHandler_PushCreatedContactToSNS(t *testing.T) {
 	}
 
 	record.Change.NewImage = newImage
-
+	record.EventName = "INSERT"
 	records := []events.DynamoDBEventRecord{record}
 	event := events.DynamoDBEvent{Records: records}
 
@@ -103,12 +103,49 @@ func TestPushContactToSNSHandler_PushCreatedContactToSNS_Error_From_Service(t *t
 	}
 
 	record.Change.NewImage = newImage
+	record.EventName = "INSERT"
 
 	records := []events.DynamoDBEventRecord{record}
 	event := events.DynamoDBEvent{Records: records}
 
 	snsService := NewMockIPushContactToSNS(gomock.NewController(t))
 	snsService.EXPECT().PublishContactIDToSNS(gomock.Any()).Return(nil, errors.New("error from service"))
+
+	snsHandler := NewPushContactToSNSHandler(snsService)
+
+	result, err := snsHandler.PushCreatedContactToSNS(context.TODO(), event)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+}
+
+func TestPushContactToSNSHandler_PushCreatedContactToSNS_Error_Record_Is_Not_An_Insert(t *testing.T) {
+
+	record := events.DynamoDBEventRecord{
+		AWSRegion:      "",
+		Change:         events.DynamoDBStreamRecord{},
+		EventID:        "",
+		EventName:      "",
+		EventSource:    "",
+		EventVersion:   "",
+		EventSourceArn: "",
+		UserIdentity:   nil,
+	}
+
+	dynamoDbIDAttr := events.NewStringAttribute("1")
+
+	newImage := map[string]events.DynamoDBAttributeValue{
+		"id": dynamoDbIDAttr,
+	}
+
+	record.Change.NewImage = newImage
+	record.EventName = "UPDATE"
+
+	records := []events.DynamoDBEventRecord{record}
+	event := events.DynamoDBEvent{Records: records}
+
+	snsService := NewMockIPushContactToSNS(gomock.NewController(t))
 
 	snsHandler := NewPushContactToSNSHandler(snsService)
 

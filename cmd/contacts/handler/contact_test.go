@@ -253,6 +253,73 @@ func TestContactHandler_GetContact_Service_Return_Not_Found(t *testing.T) {
 
 }
 
+func TestContactHandler_UpdateContact(t *testing.T) {
+	ctx := context.TODO()
+
+	record := events.SNSEventRecord{
+		EventVersion:         "",
+		EventSubscriptionArn: "",
+		EventSource:          "",
+		SNS:                  events.SNSEntity{},
+	}
+
+	record.SNS.Message = "1"
+
+	evt := events.SNSEvent{Records: []events.SNSEventRecord{record}}
+
+	contact := GetValidContact()
+
+	contactService := NewMockIContactService(gomock.NewController(t))
+	contactService.EXPECT().UpdateContactStatus(gomock.Any()).Return(&contact, nil)
+
+	contactHandler := NewContactHandler(contactService)
+
+	result, err := contactHandler.UpdateContact(ctx, evt)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestContactHandler_UpdateContact_Service_Error(t *testing.T) {
+	ctx := context.TODO()
+
+	record := events.SNSEventRecord{
+		EventVersion:         "",
+		EventSubscriptionArn: "",
+		EventSource:          "",
+		SNS:                  events.SNSEntity{},
+	}
+
+	record.SNS.Message = "1"
+
+	evt := events.SNSEvent{Records: []events.SNSEventRecord{record}}
+
+	contactService := NewMockIContactService(gomock.NewController(t))
+	contactService.EXPECT().UpdateContactStatus(gomock.Any()).Return(nil, errors.New("error from service"))
+
+	contactHandler := NewContactHandler(contactService)
+
+	result, err := contactHandler.UpdateContact(ctx, evt)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestContactHandler_UpdateContact_Error_Empty_Record_List(t *testing.T) {
+	ctx := context.TODO()
+
+	evt := events.SNSEvent{Records: []events.SNSEventRecord{}}
+
+	contactService := NewMockIContactService(gomock.NewController(t))
+
+	contactHandler := NewContactHandler(contactService)
+
+	result, err := contactHandler.UpdateContact(ctx, evt)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
 func GetValidContact() models.Contact {
 	return models.Contact{
 		ID:        "valid-id",
