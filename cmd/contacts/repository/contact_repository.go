@@ -86,14 +86,15 @@ func (cr *ContactRepository) UpdateContactStatus(id string) (*models.Contact, er
 				S: aws.String(statusUpdate),
 			},
 		},
-		TableName: aws.String(TableName),
+		ExpressionAttributeNames: map[string]*string{"#sts": aws.String("status")},
+		TableName:                aws.String(TableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {
 				S: aws.String(id),
 			},
 		},
 		ReturnValues:     aws.String("UPDATED_NEW"),
-		UpdateExpression: aws.String("set first_name = :r"),
+		UpdateExpression: aws.String("SET #sts = :r"),
 	}
 
 	result, err := cr.dynamoDB.Db.UpdateItem(input)
